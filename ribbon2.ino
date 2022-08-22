@@ -17,6 +17,14 @@
 #include <radio.h>
 #include <RDA5807M.h>
 
+// use Wi-Fi Library
+#include <WiFi.h>
+
+// use SNTP Library
+#include "time.h"
+#include "sntp.h"
+
+
 // Wi-Fiの設定
 #include "secrets/wifi_secrets.h"
 
@@ -60,6 +68,13 @@ RADIO_FREQ const MAX_FREQ PROGMEM = 10800;    // 108.0 MHz
 RADIO_FREQ const MIN_FREQ PROGMEM = 7600;     // 76.0 MHz
 int16_t const TUNE_STEP PROGMEM = 50;         // 0.5 MHzステップ
 
+int const NUM_CONNECTION_RETRY = 10;
+
+const char * NTP_SERVER_1 = "pool.ntp.org";
+const char * NTP_SERVER_2 = "time.nist.gov";
+
+const char * WEEKDAY_LUT[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+
 
 // タスクステート
 struct RadioTaskState {
@@ -70,6 +85,10 @@ struct RadioTaskState {
 // デバイスのハンドル
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 RDA5807M radio;
+
+
+// グローバル変数
+bool isWiFiAvailable;
 
 
 // 最初に1度だけ実行される
@@ -89,6 +108,26 @@ void setup() {
   display.begin(DISPLAY_ADDRESS, true);
   display.clearDisplay();
   display.display();
+
+  // 起動画面表示
+  display.setTextSize(1);
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(0, 0);
+  display.print("Starting...");
+  display.display();
+
+  // SNTPによる時刻同期の準備
+  configTime(9 * 3600, 0, NTP_SERVER_1, NTP_SERVER_2);
+
+  // Wi-Fi接続
+  WiFi.begin(WIFI_SSID, WIFI_PSK);
+  for (int i = 0; i < NUM_CONNECTION_RETRY; i++) {
+    delay(500);
+    if (WiFi.status() == WL_CONNECTED) {
+      isWiFiAvailable = true;
+      break;
+    }
+  }
 
   // Radioライブラリの初期化
   radio.init();
@@ -158,19 +197,68 @@ AppMode switch_task(AppMode current_mode, struct RadioTaskState * const p_radio_
 void standby_task_init() {
   display.clearDisplay();
 
-  // メッセージの表示
-  display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
-  display.setCursor(0, 0);
-  display.print("Ribbon2: STBY");
-  display.display();
+  
+  if (isWiFiAvailable) {
+    // Wi-Fiにつながっていれば1度画面更新
+    draw_clock();
+  } else {
+    // Wi-Fiにつながっていなければ最初にエラーを表示
+    display.setTextSize(1);
+    display.setTextColor(SH110X_WHITE);
+    display.setCursor(0, 0);
+    display.print("Dinosaur!");
+    display.display();    
+  }
 }
 
 void standby_task() {
+  static uint64_t last_update_time = 0;
+
+  // Wi-Fiにつながっているときだけ画面を更新
+  if (isWiFiAvailable) {
+    if (millis() - last_update_time > 1000) {
+      // 1秒経ったので画面更新
+      last_update_time = millis();
+      draw_clock();
+    }    
+  }
+}
+
+void draw_clock() {
+  struct tm time_info;
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(0, 0);
+
+  if (getLocalTime(&time_info)) {
+    // 時刻取得済
+    int sec = time_info.tm_sec;
+    int min = time_info.tm_min;
+    int hour = time_info.tm_hour;
+    int day = time_info.tm_mday;
+    int month = time_info.tm_mon;
+    int year = time_info.tm_year + 1900;
+    int week_day = time_info.tm_wday;
+
+    char clock_buf_0[24];
+    char clock_buf_1[24];
+    snprintf(clock_buf_0, sizeof(clock_buf_0), "%04d/%02d/%02d (%s)", year, month, day, WEEKDAY_LUT[week_day]);
+    snprintf(clock_buf_1, sizeof(clock_buf_1), "%02d:%02d:%02d", hour, min, sec);
+    
+    display.println(clock_buf_0);
+    display.println(clock_buf_1);
+    display.display(); 
+  } else {
+    // まだ取得できていないとき
+    display.print("Syncing time...");
+    display.display(); 
+  }
 }
 
 void standby_task_shutdown() {
-  //stub
+  // やることがない
 }
 
 // ラジオタスク
