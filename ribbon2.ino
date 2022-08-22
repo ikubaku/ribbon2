@@ -57,7 +57,7 @@ int const MODE_PIN PROGMEM = 4;
 int const NEXT_PIN PROGMEM = 5;
 int const PREV_PIN PROGMEM = 6;
 
-unsigned long const DEBOUNCE_TIME_MS PROGMEM = 100;
+unsigned long const DEBOUNCE_TIME_MS PROGMEM = 30;
 
 uint8_t const DISPLAY_ADDRESS PROGMEM = 0x3C;
 int const SCREEN_WIDTH PROGMEM = 128;
