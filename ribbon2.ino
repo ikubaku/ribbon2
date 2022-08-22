@@ -67,7 +67,7 @@ uint8_t const RADIO_VOLUME PROGMEM = 1;
 
 RADIO_FREQ const MAX_FREQ PROGMEM = 10800;    // 108.0 MHz
 RADIO_FREQ const MIN_FREQ PROGMEM = 7600;     // 76.0 MHz
-int16_t const TUNE_STEP PROGMEM = 50;         // 0.5 MHzステップ
+int16_t const TUNE_STEP PROGMEM = 10;         // 0.5 MHzステップ
 
 int const NUM_CONNECTION_RETRY PROGMEM = 10;
 
