@@ -164,8 +164,9 @@ void loop() {
   int mode_button_state = digitalRead(MODE_PIN);
   if (mode_button_state != last_mode_button_state) {
     last_mode_button_edge = millis();
+    last_mode_button_state = mode_button_state;
   }
-  if ((millis() - last_mode_button_state) > DEBOUNCE_TIME_MS) {
+  if ((millis() - last_mode_button_edge) > DEBOUNCE_TIME_MS) {
     int button_state = mode_button_pressed ? HIGH : LOW;
     if (mode_button_state != button_state) {
       mode_button_pressed = mode_button_state == HIGH;
@@ -297,8 +298,9 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
   int next_button_state = digitalRead(NEXT_PIN);
   if (next_button_state != last_next_button_state) {
     last_next_button_edge = millis();
+    last_next_button_state = next_button_state;
   }
-  if ((millis() - last_next_button_state) > DEBOUNCE_TIME_MS) {
+  if ((millis() - last_next_button_edge) > DEBOUNCE_TIME_MS) {
     int button_state = next_button_pressed ? HIGH : LOW;
     if (next_button_state != button_state) {
       next_button_pressed = next_button_state == HIGH;
@@ -313,8 +315,9 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
   int prev_button_state = digitalRead(PREV_PIN);
   if (prev_button_state != last_prev_button_state) {
     last_prev_button_edge = millis();
+    last_prev_button_state = prev_button_state;    
   }
-  if ((millis() - last_prev_button_state) > DEBOUNCE_TIME_MS) {
+  if ((millis() - last_prev_button_edge) > DEBOUNCE_TIME_MS) {
     int button_state = prev_button_pressed ? HIGH : LOW;
     if (prev_button_state != button_state) {
       prev_button_pressed = prev_button_state == HIGH;
