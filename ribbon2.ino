@@ -17,6 +17,9 @@
 #include <radio.h>
 #include <RDA5807M.h>
 
+// Wi-Fiの設定
+#include "wifi_secrets.h"
+
 
 // データ構造定義
 enum AppModeEnum {
