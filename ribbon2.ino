@@ -47,6 +47,7 @@ void standby_task_shutdown(void);
 
 void radio_task_init(void);
 void radio_task(void);
+void draw_clock(void);
 void radio_task_shutdown(void);
 
 
@@ -68,7 +69,7 @@ RADIO_FREQ const MAX_FREQ PROGMEM = 10800;    // 108.0 MHz
 RADIO_FREQ const MIN_FREQ PROGMEM = 7600;     // 76.0 MHz
 int16_t const TUNE_STEP PROGMEM = 50;         // 0.5 MHzステップ
 
-int const NUM_CONNECTION_RETRY = 10;
+int const NUM_CONNECTION_RETRY PROGMEM = 10;
 
 const char * NTP_SERVER_1 = "pool.ntp.org";
 const char * NTP_SERVER_2 = "time.nist.gov";
@@ -273,11 +274,11 @@ void radio_task_init(struct RadioTaskState * const p_radio_state) {
   display.setTextColor(SH110X_WHITE);
   display.setCursor(0, 0);
   display.print("Ribbon2: RADIO");
+
   display.setCursor(0, 8);
-  display.print("Freq:");
-  display.print(p_radio_state->tune_freq / 100);
-  display.print(".");
-  display.print(p_radio_state->tune_freq % 100);
+  char freq_buf[24];
+  snprintf(freq_buf, sizeof(freq_buf), "Freq:%3d.%02d", p_radio_state->tune_freq / 100, p_radio_state->tune_freq % 100);
+  display.print(freq_buf);
   display.display();
 }
 
@@ -336,12 +337,13 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
       display.fillRect(0, 8, 127, 13, SH110X_BLACK);
       display.setTextSize(1);
       display.setTextColor(SH110X_WHITE);
+
       display.setCursor(0, 8);
-      display.print("Freq:");
-      display.print(new_freq / 100);
-      display.print(".");
-      display.print(new_freq % 100);
+      char freq_buf[24];
+      snprintf(freq_buf, sizeof(freq_buf), "Freq:%3d.%02d", new_freq / 100, new_freq % 100);
+      display.print(freq_buf);
       display.display();
+
       p_radio_state->tune_freq = new_freq;
     }
   }
