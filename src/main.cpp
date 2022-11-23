@@ -41,16 +41,16 @@ typedef enum AppModeEnum AppMode;
 
 
 // タスク関数
-AppMode switch_task(AppMode current_mode);
+AppMode switch_task(AppMode current_mode, struct RadioTaskState * const p_radio_state);
 
 void standby_task_init(void);
 void standby_task(void);
 void standby_task_shutdown(void);
 
-void radio_task_init(void);
-void radio_task(void);
+void radio_task_init(struct RadioTaskState * const p_radio_state);
+void radio_task(struct RadioTaskState * const p_radio_state);
 void draw_clock(void);
-void radio_task_shutdown(void);
+void radio_task_shutdown(struct RadioTaskState * const p_radio_state);
 
 
 // 定数
