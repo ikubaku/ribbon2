@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /// Ribbon 2
 /// FM DSP Radio
 /// 
@@ -26,7 +28,7 @@
 
 
 // Wi-Fiの設定
-#include "secrets/wifi_secrets.h"
+#include "wifi_secrets.h"
 
 
 // データ構造定義
