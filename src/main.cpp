@@ -54,10 +54,10 @@ void radio_task_shutdown(void);
 
 
 // 定数
-int const LED_PIN PROGMEM = 3;
-int const MODE_PIN PROGMEM = 4;
-int const NEXT_PIN PROGMEM = 5;
-int const PREV_PIN PROGMEM = 6;
+int const LED_PIN PROGMEM = D7;
+int const MODE_PIN PROGMEM = D10;
+int const NEXT_PIN PROGMEM = D9;
+int const PREV_PIN PROGMEM = D8;
 
 unsigned long const DEBOUNCE_TIME_MS PROGMEM = 30;
 
