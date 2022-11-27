@@ -12,8 +12,8 @@
 #include <Wire.h>
 // use Adafruit GFX Library
 #include <Adafruit_GFX.h>
-// use Adafruit SH110X Library
-#include <Adafruit_SH110X.h>
+// use Adafruit SSSD1306 Library
+#include <Adafruit_SSD1306.h>
 
 // use Radio Library (RDA5807)
 #include <radio.h>
@@ -41,23 +41,24 @@ typedef enum AppModeEnum AppMode;
 
 
 // タスク関数
-AppMode switch_task(AppMode current_mode);
+AppMode switch_task(AppMode current_mode, struct RadioTaskState * const p_radio_state);
 
 void standby_task_init(void);
 void standby_task(void);
 void standby_task_shutdown(void);
 
-void radio_task_init(void);
-void radio_task(void);
+void radio_task_init(struct RadioTaskState * const p_radio_state);
+void radio_task(struct RadioTaskState * const p_radio_state);
 void draw_clock(void);
-void radio_task_shutdown(void);
+void radio_task_shutdown(struct RadioTaskState * const p_radio_state);
 
 
 // 定数
-int const LED_PIN PROGMEM = 3;
-int const MODE_PIN PROGMEM = 4;
-int const NEXT_PIN PROGMEM = 5;
-int const PREV_PIN PROGMEM = 6;
+int const LED_PIN PROGMEM = D7;
+int const MODE_PIN PROGMEM = D10;
+int const NEXT_PIN PROGMEM = D9;
+int const PREV_PIN PROGMEM = D8;
+int const MUTE_PIN PROGMEM = D6;
 
 unsigned long const DEBOUNCE_TIME_MS PROGMEM = 30;
 
@@ -86,7 +87,7 @@ struct RadioTaskState {
 
 
 // デバイスのハンドル
-Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 RDA5807M radio;
 
 
@@ -100,21 +101,24 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
 
   // モード選択ボタンのピンの設定
-  pinMode(MODE_PIN, INPUT_PULLDOWN);
+  pinMode(MODE_PIN, INPUT_PULLUP);
   
   // 周波数調整ボタンのピンの設定
-  pinMode(NEXT_PIN, INPUT_PULLDOWN);
-  pinMode(PREV_PIN, INPUT_PULLDOWN);
+  pinMode(NEXT_PIN, INPUT_PULLUP);
+  pinMode(PREV_PIN, INPUT_PULLUP);
+
+  // ミュート信号のピンの設定
+  pinMode(MUTE_PIN, OUTPUT);
 
   // OLEDディスプレイの初期化
   delay(250);    // ディスプレイのリセット待機
-  display.begin(DISPLAY_ADDRESS, true);
+  display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
   display.clearDisplay();
   display.display();
 
   // 起動画面表示
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.print("Starting...");
   display.display();
@@ -163,7 +167,7 @@ void loop() {
   }
 
   // モード選択ボタンの状態取得
-  int mode_button_state = digitalRead(MODE_PIN);
+  int mode_button_state = digitalRead(MODE_PIN) == 0;
   if (mode_button_state != last_mode_button_state) {
     last_mode_button_edge = millis();
     last_mode_button_state = mode_button_state;
@@ -173,7 +177,7 @@ void loop() {
     if (mode_button_state != button_state) {
       mode_button_pressed = mode_button_state == HIGH;
 
-      // 離す -> 押すのタイミング (LOW -> HIGH) でモードを切り替える
+      // 離す -> 押すのタイミング (HIGH -> LOW) でモードを切り替える
       if (mode_button_pressed) {
         mode = switch_task(mode, &radio_state);
       }
@@ -201,6 +205,9 @@ AppMode switch_task(AppMode current_mode, struct RadioTaskState * const p_radio_
 void standby_task_init() {
   display.clearDisplay();
 
+  // アンプをミュートする
+  digitalWrite(MUTE_PIN, HIGH);
+
   
   if (isWiFiAvailable) {
     // Wi-Fiにつながっていれば1度画面更新
@@ -208,7 +215,7 @@ void standby_task_init() {
   } else {
     // Wi-Fiにつながっていなければ最初にエラーを表示
     display.setTextSize(1);
-    display.setTextColor(SH110X_WHITE);
+    display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
     display.print("Dinosaur!");
     display.display();    
@@ -233,7 +240,7 @@ void draw_clock() {
 
   display.clearDisplay();
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
 
   if (getLocalTime(&time_info)) {
@@ -269,12 +276,15 @@ void standby_task_shutdown() {
 void radio_task_init(struct RadioTaskState * const p_radio_state) {
   display.clearDisplay();
 
+  // アンプのミュートを解除する
+  digitalWrite(MUTE_PIN, LOW);
+
   radio.setFrequency(p_radio_state->tune_freq);
   radio.setMute(false);
 
   // メッセージの表示
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.print("Ribbon2: RADIO");
 
@@ -297,7 +307,7 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
   int16_t tune_amount = 0;
 
   // 周波数選択ボタンの状態取得
-  int next_button_state = digitalRead(NEXT_PIN);
+  int next_button_state = digitalRead(NEXT_PIN) == 0;
   if (next_button_state != last_next_button_state) {
     last_next_button_edge = millis();
     last_next_button_state = next_button_state;
@@ -307,14 +317,14 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
     if (next_button_state != button_state) {
       next_button_pressed = next_button_state == HIGH;
 
-      // 離す -> 押すのタイミング (LOW -> HIGH) 
+      // 離す -> 押すのタイミング (HIGH -> LOW) 
       if (next_button_pressed) {
         should_tune = true;
         tune_amount += TUNE_STEP;
       }
     }
   }
-  int prev_button_state = digitalRead(PREV_PIN);
+  int prev_button_state = digitalRead(PREV_PIN) == 0;
   if (prev_button_state != last_prev_button_state) {
     last_prev_button_edge = millis();
     last_prev_button_state = prev_button_state;    
@@ -324,7 +334,7 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
     if (prev_button_state != button_state) {
       prev_button_pressed = prev_button_state == HIGH;
 
-      // 離す -> 押すのタイミング (LOW -> HIGH) 
+      // 離す -> 押すのタイミング (HIGH -> LOW) 
       if (prev_button_pressed) {
         should_tune = true;
         tune_amount -= TUNE_STEP;
@@ -339,9 +349,9 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
     else if (MAX_FREQ < new_freq) new_freq = MAX_FREQ;
     if (new_freq != p_radio_state->tune_freq) {
       radio.setFrequency(new_freq);
-      display.fillRect(0, 8, 127, 13, SH110X_BLACK);
+      display.fillRect(0, 8, 127, 13, SSD1306_BLACK);
       display.setTextSize(1);
-      display.setTextColor(SH110X_WHITE);
+      display.setTextColor(SSD1306_WHITE);
 
       display.setCursor(0, 8);
       char freq_buf[24];
