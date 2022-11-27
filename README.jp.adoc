@@ -1,0 +1,16 @@
+= ribbon2
+
+Arduino FM radio for practicing physical computing.
+
+== 必要なもの
+* PlatformIO IDE: https://platformio.org/
+* https://github.com/ikubaku/ribbon2_hw で説明されている部品とPCB
+
+== ビルド方法
+. https://github.com/ikubaku/ribbon2/blob/dev/include/wifi_secrets.h.template を同じディレクトリ内に `wifi_secrets.h` という名前でコピーします。
+. `wifi_secrets.h` の `WIFI_SSID` と `WIFI_PSK` を自分のネットワーク環境に合わせて変更します。
+. PlatformIO IDEのメニューから `Build` あるいは `Upload` を選択します。
+
+== ライセンス
+このプログラムは The MIT License のもとで提供されます。
+詳しくは `LICENSE` をご覧ください。
