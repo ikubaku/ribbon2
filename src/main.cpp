@@ -58,6 +58,7 @@ int const LED_PIN PROGMEM = D7;
 int const MODE_PIN PROGMEM = D10;
 int const NEXT_PIN PROGMEM = D9;
 int const PREV_PIN PROGMEM = D8;
+int const MUTE_PIN PROGMEM = D6;
 
 unsigned long const DEBOUNCE_TIME_MS PROGMEM = 30;
 
@@ -105,6 +106,9 @@ void setup() {
   // 周波数調整ボタンのピンの設定
   pinMode(NEXT_PIN, INPUT_PULLDOWN);
   pinMode(PREV_PIN, INPUT_PULLDOWN);
+
+  // ミュート信号のピンの設定
+  pinMode(MUTE_PIN, OUTPUT);
 
   // OLEDディスプレイの初期化
   delay(250);    // ディスプレイのリセット待機
@@ -201,6 +205,9 @@ AppMode switch_task(AppMode current_mode, struct RadioTaskState * const p_radio_
 void standby_task_init() {
   display.clearDisplay();
 
+  // アンプをミュートする
+  digitalWrite(MUTE_PIN, HIGH);
+
   
   if (isWiFiAvailable) {
     // Wi-Fiにつながっていれば1度画面更新
@@ -268,6 +275,9 @@ void standby_task_shutdown() {
 // ラジオタスク
 void radio_task_init(struct RadioTaskState * const p_radio_state) {
   display.clearDisplay();
+
+  // アンプのミュートを解除する
+  digitalWrite(MUTE_PIN, LOW);
 
   radio.setFrequency(p_radio_state->tune_freq);
   radio.setMute(false);
