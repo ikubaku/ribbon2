@@ -101,11 +101,11 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
 
   // モード選択ボタンのピンの設定
-  pinMode(MODE_PIN, INPUT_PULLDOWN);
+  pinMode(MODE_PIN, INPUT_PULLUP);
   
   // 周波数調整ボタンのピンの設定
-  pinMode(NEXT_PIN, INPUT_PULLDOWN);
-  pinMode(PREV_PIN, INPUT_PULLDOWN);
+  pinMode(NEXT_PIN, INPUT_PULLUP);
+  pinMode(PREV_PIN, INPUT_PULLUP);
 
   // ミュート信号のピンの設定
   pinMode(MUTE_PIN, OUTPUT);
@@ -167,7 +167,7 @@ void loop() {
   }
 
   // モード選択ボタンの状態取得
-  int mode_button_state = digitalRead(MODE_PIN);
+  int mode_button_state = digitalRead(MODE_PIN) == 0;
   if (mode_button_state != last_mode_button_state) {
     last_mode_button_edge = millis();
     last_mode_button_state = mode_button_state;
@@ -177,7 +177,7 @@ void loop() {
     if (mode_button_state != button_state) {
       mode_button_pressed = mode_button_state == HIGH;
 
-      // 離す -> 押すのタイミング (LOW -> HIGH) でモードを切り替える
+      // 離す -> 押すのタイミング (HIGH -> LOW) でモードを切り替える
       if (mode_button_pressed) {
         mode = switch_task(mode, &radio_state);
       }
@@ -307,7 +307,7 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
   int16_t tune_amount = 0;
 
   // 周波数選択ボタンの状態取得
-  int next_button_state = digitalRead(NEXT_PIN);
+  int next_button_state = digitalRead(NEXT_PIN) == 0;
   if (next_button_state != last_next_button_state) {
     last_next_button_edge = millis();
     last_next_button_state = next_button_state;
@@ -317,14 +317,14 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
     if (next_button_state != button_state) {
       next_button_pressed = next_button_state == HIGH;
 
-      // 離す -> 押すのタイミング (LOW -> HIGH) 
+      // 離す -> 押すのタイミング (HIGH -> LOW) 
       if (next_button_pressed) {
         should_tune = true;
         tune_amount += TUNE_STEP;
       }
     }
   }
-  int prev_button_state = digitalRead(PREV_PIN);
+  int prev_button_state = digitalRead(PREV_PIN) == 0;
   if (prev_button_state != last_prev_button_state) {
     last_prev_button_edge = millis();
     last_prev_button_state = prev_button_state;    
@@ -334,7 +334,7 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
     if (prev_button_state != button_state) {
       prev_button_pressed = prev_button_state == HIGH;
 
-      // 離す -> 押すのタイミング (LOW -> HIGH) 
+      // 離す -> 押すのタイミング (HIGH -> LOW) 
       if (prev_button_pressed) {
         should_tune = true;
         tune_amount -= TUNE_STEP;
