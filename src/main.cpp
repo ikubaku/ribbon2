@@ -12,8 +12,8 @@
 #include <Wire.h>
 // use Adafruit GFX Library
 #include <Adafruit_GFX.h>
-// use Adafruit SH110X Library
-#include <Adafruit_SH110X.h>
+// use Adafruit SSSD1306 Library
+#include <Adafruit_SSD1306.h>
 
 // use Radio Library (RDA5807)
 #include <radio.h>
@@ -87,7 +87,7 @@ struct RadioTaskState {
 
 
 // デバイスのハンドル
-Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 RDA5807M radio;
 
 
@@ -112,13 +112,13 @@ void setup() {
 
   // OLEDディスプレイの初期化
   delay(250);    // ディスプレイのリセット待機
-  display.begin(DISPLAY_ADDRESS, true);
+  display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
   display.clearDisplay();
   display.display();
 
   // 起動画面表示
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.print("Starting...");
   display.display();
@@ -215,7 +215,7 @@ void standby_task_init() {
   } else {
     // Wi-Fiにつながっていなければ最初にエラーを表示
     display.setTextSize(1);
-    display.setTextColor(SH110X_WHITE);
+    display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
     display.print("Dinosaur!");
     display.display();    
@@ -240,7 +240,7 @@ void draw_clock() {
 
   display.clearDisplay();
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
 
   if (getLocalTime(&time_info)) {
@@ -284,7 +284,7 @@ void radio_task_init(struct RadioTaskState * const p_radio_state) {
 
   // メッセージの表示
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.print("Ribbon2: RADIO");
 
@@ -349,9 +349,9 @@ void radio_task(struct RadioTaskState * const p_radio_state) {
     else if (MAX_FREQ < new_freq) new_freq = MAX_FREQ;
     if (new_freq != p_radio_state->tune_freq) {
       radio.setFrequency(new_freq);
-      display.fillRect(0, 8, 127, 13, SH110X_BLACK);
+      display.fillRect(0, 8, 127, 13, SSD1306_BLACK);
       display.setTextSize(1);
-      display.setTextColor(SH110X_WHITE);
+      display.setTextColor(SSD1306_WHITE);
 
       display.setCursor(0, 8);
       char freq_buf[24];
